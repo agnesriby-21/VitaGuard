@@ -1,6 +1,7 @@
 CREATE SCHEMA IF NOT EXISTS vitaguard;
 
 USE vitaguard;
+-- ERD Ver 0.1.1
 
 -- Table Provinces
 CREATE TABLE `provinces` (
@@ -106,12 +107,26 @@ CREATE TABLE `medical_histories` (
 CREATE TABLE `medicines` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
 
-    `name` VARCHAR(100) NOT NULL UNIQUE,
-    `class` ENUM('') NOT NULL,
+    `name` VARCHAR(100) NOT NULL,
+    `dosage_form` ENUM(
+        'tablet',
+        'capsule',
+        'syrup',
+        'injection',
+        'ointment') NOT NULL, 
+    `medicine_class` ENUM(
+        'over_the_counter',
+        'limited_otc',
+        'prescription',
+        'narcotic',
+        'psychotropic'
+        ) NOT NULL,
     `description` TEXT NOT NULL,
 
     `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    `updated_at` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP
+    `updated_at` TIMESTAMP NULL DEFAULT NULL ON UPDATE CURRENT_TIMESTAMP,
+
+    UNIQUE(`name`,`dosage_form`)
 );
 
 -- Table Allergens
@@ -368,6 +383,8 @@ CREATE TABLE `chats` (
 -- Table Prescriptions
 CREATE TABLE `prescriptions` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
+    `doctor_username` VARCHAR(50) NOT NULL,
+    `member_username` VARCHAR(50) NOT NULL,
 
     `appointment_id` BIGINT NULL,
     `consultation_id` BIGINT NULL,
@@ -423,6 +440,7 @@ CREATE TABLE `article_topics`(
 CREATE TABLE `articles` (
     `id` BIGINT AUTO_INCREMENT PRIMARY KEY,
     `created_by` VARCHAR(50) NOT NULL,
+    `topic_id` INT NOT NULL,
 
     `content` TEXT NOT NULL,
 
@@ -432,7 +450,7 @@ CREATE TABLE `articles` (
 
     
     CONSTRAINT `fk_article_users` FOREIGN KEY (`created_by`) REFERENCES `users` (`username`) ON DELETE RESTRICT,
-    CONSTRAINT `fk_article_topics` FOREIGN KEY (`topic_id`) REFERENCES `article_topics` (`id`) ON DELETE RESTRICT,
+    CONSTRAINT `fk_article_topics` FOREIGN KEY (`topic_id`) REFERENCES `article_topics` (`id`) ON DELETE RESTRICT
 );
 
 -- TODO: Table Articles Images
