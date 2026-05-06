@@ -67,7 +67,7 @@ class VitaGuardSeeder extends Seeder
 
     /**
      * Store header names
-     * @param array $row
+     * @param array $csv
      * @return void
      */
     protected function createCapsule($csv): void
@@ -130,22 +130,8 @@ class VitaGuardSeeder extends Seeder
      * To be overridden if data manipulation needed
      * @param mixed $dataArray
      * @return array
-     */
-    protected function modifyData($dataArray): array
+     */protected function modifyData($dataArray): array
     {
-        $timeFields = [
-            'open_time',
-            'close_time',
-            'break_start_time',
-            'break_end_time'
-        ];
-
-        foreach ($timeFields as $field) {
-            if (isset($dataArray[$field]) && trim($dataArray[$field]) === '') {
-                $dataArray[$field] = null;
-            }
-        }
-
         return $dataArray;
     }
 
