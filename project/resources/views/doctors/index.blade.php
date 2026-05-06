@@ -1,6 +1,6 @@
 @extends('layouts.main')
 @section('content')
-<div class="container" style="margin-top: 100px; margin-bottom: 50px;">
+<div class="container" style="margin-top: 64px; margin-bottom: 50px;">
     <div class="row mb-4 text-center">
         <div class="col-12">
             <h2 class="font-weight-bold">Find Your Doctor</h2>
