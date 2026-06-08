@@ -97,8 +97,8 @@ class Article
             'creator'    => $this->creator->toArray(), 
             'topic'      => $this->topic->toArray(),
             'content'    => $this->content,
-            'created_at' => $this->createdAt->toDateTimeString(),
-            'updated_at' => $this->updatedAt->toDateTimeString(),
+            'createdAt' => $this->createdAt->toDateTimeString(),
+            'updatedAt' => $this->updatedAt->toDateTimeString(),
         ];
     }
 
@@ -114,8 +114,8 @@ class Article
             User::fromArray($data['creator']), 
             Topic::fromArray($data['topic']),
             $data['content'] ?? '',
-            Carbon::parse($data['created_at']),
-            Carbon::parse($data['updated_at'])
+            Carbon::parse($data['createdAt']),
+            Carbon::parse($data['updatedAt'])
         );
     }
     #endregion

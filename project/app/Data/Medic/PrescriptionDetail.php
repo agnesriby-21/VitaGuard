@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Data\Medic\PrescriptionDetail;
+namespace App\Data\Medic;
 
 use Carbon\Carbon;
 use App\Data\Medic\Medicine;

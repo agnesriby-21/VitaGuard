@@ -10,7 +10,7 @@ use App\Data\Value\Medic\BloodType;
 use App\Data\Value\Medic\SmokingStatus;
 use InvalidArgumentException;
 
-class MedicalHistory
+class MedicalProfile
 {
     #region PROPERTIES
     private int $id;

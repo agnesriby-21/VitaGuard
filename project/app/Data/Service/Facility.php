@@ -114,7 +114,7 @@ class Facility
             'id' => $this->getId(),
             'name' => $this->getName(),
             'address' => $this->getAddress()->toArray(),
-            'phone_number' => $this->getPhoneNumber(),
+            'phoneNumber' => $this->getPhoneNumber(),
             'rating' => $this->getRating(),
         ];
     }
@@ -131,7 +131,7 @@ class Facility
             (int) $data['id'],
             $data['name'],
             Address::fromArray($data['address']),
-            $data['phone_number'],
+            $data['phoneNumber'],
             (float) $data['rating']
         );
     }

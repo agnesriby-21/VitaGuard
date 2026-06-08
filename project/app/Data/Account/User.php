@@ -150,7 +150,7 @@ abstract class User
             throw new RuntimeException("Target child class '{$targetClass}' does not exist.");
         }
 
-        return new $targetClass($data);
+        return $targetClass::fromArray($data);
     }
     #endregion
 }

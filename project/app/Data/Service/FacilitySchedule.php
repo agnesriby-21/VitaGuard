@@ -18,8 +18,8 @@ class FacilitySchedule extends DailySchedule
             DayOfWeek::from($data['day']),
             Carbon::parse($data['open_time']),
             Carbon::parse($data['close_time']),
-            $data['break_start'] ? Carbon::parse($data['breakStart']) : null,
-            $data['break_end'] ? Carbon::parse($data['breakEnd']) : null,
+            $data['break_start_time'] ? Carbon::parse($data['break_start_time']) : null,
+            $data['break_end_time'] ? Carbon::parse($data['break_end_time']) : null,
         );
     }
     #endregion

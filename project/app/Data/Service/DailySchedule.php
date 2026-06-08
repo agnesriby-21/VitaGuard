@@ -93,7 +93,7 @@ abstract class DailySchedule
 
     public function setBreakStart(?Carbon $value): void
     {
-        if ($this->breakStart !== null && $this->breakStart < $this->open) {
+        if ($value !== null && $value < $this->open) {
             throw new InvalidArgumentException("Break cannot start before opening time.");
         }
         $this->breakStart = $value;
@@ -106,7 +106,7 @@ abstract class DailySchedule
                 throw new InvalidArgumentException("Break end time must be after break start time.");
             }
         }
-        if ($this->breakEnd !== null && $this->breakEnd > $this->close) {
+        if ($value !== null && $value > $this->close) {
             throw new InvalidArgumentException("Break cannot end after closing time.");
         }
         $this->breakEnd = $value;

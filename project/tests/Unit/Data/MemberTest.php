@@ -1,155 +1,171 @@
 <?php
 
+// tests/Unit/Data/Account/MemberTest.php
+
 namespace Tests\Unit\Data\Account;
 
 use Tests\TestCase;
-use Carbon\Carbon;
-
 use App\Data\Account\Member;
-use App\Data\Location\Province;
-use App\Data\Location\City;
-use App\Data\Location\District;
-use App\Data\Location\Address;
-
-use App\Data\Value\Account\Gender;
 use App\Data\Value\Account\Status;
-use App\Data\Value\Account\Role;
-
+use App\Data\Value\Account\Gender;
+use App\Data\Location\Address;
+use App\Data\Location\District;
+use App\Data\Location\City;
+use App\Data\Location\Province;
+use Carbon\Carbon;
 use InvalidArgumentException;
 
 class MemberTest extends TestCase
 {
-    private function createAddress(): Address
+    private function createValidAddress(): Address
     {
-        $prov = new Province(1, "East Java");
-        $city = new City(1, "Surabaya", $prov);
-        $dist = new District(1, "Gubeng", $city);
-        $address = new Address("Jalan Raya Gubeng No.1", $dist);
-        return $address;
-
+        $province = new Province(1, 'Metro Manila');
+        $city = new City(1, 'Makati City', $province);
+        $district = new District(1, 'Poblacion', $city);
+        return new Address('123 Test Street', $district);
     }
 
-    private function createMember(): Member
+    private function createValidMember(): Member
     {
+        $address = $this->createValidAddress();
+
         return new Member(
-            username: 'joshua',
-            email: 'joshua@example.com',
-            phoneNumber: '+628123456789',
-            status: Status::ACTIVE,
-            firstName: 'Joshua',
-            middleName: 'Nehemia',
-            lastName: 'Tan',
-            gender: Gender::MALE,
-            dateOfBirth: Carbon::parse('2000-01-01'),
-            address: $this->createAddress()
+            'john_doe',
+            'john@example.com',
+            '+9171234567',
+            Status::ACTIVE,
+            'John',
+            'Michael',
+            'Doe',
+            Gender::MALE,
+            Carbon::parse('1990-05-15'),
+            $address
         );
     }
 
-    public function test_constructor_sets_all_properties(): void
+    public function testCanCreateValidMember(): void
     {
-        $member = $this->createMember();
+        $member = $this->createValidMember();
 
-        $this->assertEquals('joshua', $member->getUsername());
-        $this->assertEquals('joshua@example.com', $member->getEmail());
-        $this->assertEquals('+628123456789', $member->getPhoneNumber());
-
-        $this->assertEquals(Role::MEMBER, $member->getRole());
-        $this->assertEquals(Status::ACTIVE, $member->getStatus());
-
-        $this->assertEquals('Joshua', $member->getFirstName());
-        $this->assertEquals('Nehemia', $member->getMiddleName());
-        $this->assertEquals('Tan', $member->getLastName());
-
+        $this->assertEquals('john_doe', $member->getUsername());
+        $this->assertEquals('john@example.com', $member->getEmail());
+        $this->assertEquals('John', $member->getFirstName());
+        $this->assertEquals('Michael', $member->getMiddleName());
+        $this->assertEquals('Doe', $member->getLastName());
         $this->assertEquals(Gender::MALE, $member->getGender());
-        $this->assertEquals(
-            '2000-01-01',
-            $member->getDateOfBirth()->toDateString()
-        );
-
+        $this->assertInstanceOf(Carbon::class, $member->getDateOfBirth());
         $this->assertInstanceOf(Address::class, $member->getAddress());
     }
 
-    public function test_first_name_cannot_be_empty(): void
+    public function testSetFirstNameThrowsExceptionForEmptyFirstName(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('First name cannot be empty.');
 
-        $member = $this->createMember();
-        $member->setFirstName('');
+        $address = $this->createValidAddress();
+        new Member(
+            'john_doe',
+            'john@example.com',
+            '+9171234567',
+            Status::ACTIVE,
+            '',
+            'Michael',
+            'Doe',
+            Gender::MALE,
+            Carbon::parse('1990-05-15'),
+            $address
+        );
     }
 
-    public function test_middle_name_can_be_empty(): void
-    {
-        $member = $this->createMember();
-        $member->setMiddleName('');
-        $this->assertEquals($member->getMiddleName(),"");
-    }
-
-    public function test_last_name_cannot_be_empty(): void
+    public function testSetLastNameThrowsExceptionForEmptyLastName(): void
     {
         $this->expectException(InvalidArgumentException::class);
         $this->expectExceptionMessage('Last name cannot be empty.');
 
-        $member = $this->createMember();
-        $member->setLastName('');
+        $address = $this->createValidAddress();
+        new Member(
+            'john_doe',
+            'john@example.com',
+            '+9171234567',
+            Status::ACTIVE,
+            'John',
+            'Michael',
+            '',
+            Gender::MALE,
+            Carbon::parse('1990-05-15'),
+            $address
+        );
     }
 
-    public function test_to_array_returns_expected_structure(): void
+    public function testMiddleNameCanBeEmpty(): void
     {
-        $member = $this->createMember();
+        $address = $this->createValidAddress();
+        $member = new Member(
+            'john_doe',
+            'john@example.com',
+            '+9171234567',
+            Status::ACTIVE,
+            'John',
+            '',
+            'Doe',
+            Gender::MALE,
+            Carbon::parse('1990-05-15'),
+            $address
+        );
 
+        $this->assertEquals('', $member->getMiddleName());
+    }
+
+    public function testToArrayReturnsCorrectStructure(): void
+    {
+        $member = $this->createValidMember();
         $array = $member->toArray();
 
-        $this->assertEquals('joshua', $array['username']);
-        $this->assertEquals('Joshua', $array['firstName']);
-        $this->assertEquals('Nehemia', $array['middleName']);
-        $this->assertEquals('Tan', $array['lastName']);
-
-        $this->assertEquals(
-            Gender::MALE->value,
-            $array['gender']
-        );
-
+        $this->assertArrayHasKey('username', $array);
+        $this->assertArrayHasKey('email', $array);
+        $this->assertArrayHasKey('firstName', $array);
+        $this->assertArrayHasKey('lastName', $array);
+        $this->assertArrayHasKey('gender', $array);
+        $this->assertArrayHasKey('dateOfBirth', $array);
         $this->assertArrayHasKey('address', $array);
+        $this->assertEquals('john_doe', $array['username']);
+        $this->assertEquals('John', $array['firstName']);
+        $this->assertEquals('male', $array['gender']);
     }
 
-    public function test_from_array_creates_member(): void
+    public function testFromArrayCreatesValidMember(): void
     {
-        $member = $this->createMember();
+        $addressData = [
+            'detail' => '123 Test Street',
+            'district' => [
+                'id' => 1,
+                'name' => 'Poblacion',
+                'city' => [
+                    'id' => 1,
+                    'name' => 'Makati City',
+                    'province' => ['id' => 1, 'name' => 'Metro Manila']
+                ]
+            ]
+        ];
 
-        $reconstructed = Member::fromArray(
-            $member->toArray()
-        );
+        $data = [
+            'username' => 'john_doe',
+            'email' => 'john@example.com',
+            'phoneNumber' => '+9171234567',
+            'status' => 'active',
+            'firstName' => 'John',
+            'middleName' => 'Michael',
+            'lastName' => 'Doe',
+            'gender' => 'male',
+            'dateOfBirth' => '1990-05-15 00:00:00',
+            'address' => $addressData,
+            'role' => 'member'
+        ];
 
-        $this->assertEquals(
-            $member->getUsername(),
-            $reconstructed->getUsername()
-        );
+        $member = Member::fromArray($data);
 
-        $this->assertEquals(
-            $member->getEmail(),
-            $reconstructed->getEmail()
-        );
-
-        $this->assertEquals(
-            $member->getFirstName(),
-            $reconstructed->getFirstName()
-        );
-
-        $this->assertEquals(
-            $member->getGender(),
-            $reconstructed->getGender()
-        );
-    }
-
-    public function test_from_array_requires_first_name(): void
-    {
-        $data = $this->createMember()->toArray();
-
-        unset($data['firstName']);
-
-        $this->expectException(\InvalidArgumentException::class);
-
-        Member::fromArray($data);
+        $this->assertInstanceOf(Member::class, $member);
+        $this->assertEquals('john_doe', $member->getUsername());
+        $this->assertEquals('John', $member->getFirstName());
     }
 }

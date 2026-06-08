@@ -2,7 +2,7 @@
 
 namespace App\Data\Service;
 
-use App\Models\User;
+use App\Data\Account\User;
 use Carbon\Carbon;
 use InvalidArgumentException;
 
@@ -11,14 +11,14 @@ class Chat
     #region FIELDS
     private int $id;
     private string $message;
-    private ?User $sender;
+    private User $sender;
     #endregion
 
     #region CONSTRUCTOR
     public function __construct(
         int $id,
         string $message,
-        ?User $sender = null
+        User $sender
     ) {
         $this->setId($id);
         $this->setMessage($message);
@@ -37,7 +37,7 @@ class Chat
         return $this->message;
     }
 
-    public function getSender(): ?User
+    public function getSender(): User
     {
         return $this->sender;
     }
@@ -57,7 +57,7 @@ class Chat
         $this->message = $value;
     }
 
-    public function setSender(?User $value): void
+    public function setSender(User $value): void
     {
         $this->sender = $value;
     }
@@ -86,7 +86,7 @@ class Chat
         return new self(
             (int) $data['id'],
             (string) $data['message'],
-            !empty($data['sender']) ? User::fromArray($data['sender']) : null
+            User::fromArray($data['sender'])
         );
     }
     #endregion

@@ -24,7 +24,7 @@ class Doctor extends User
     private Gender $gender;
     private Carbon $dateOfBirth;
     private Address $address;
-    private array $specialties;
+    private array $specialties=[];
     #endregion
 
     #region CONSTRUCTOR
@@ -54,6 +54,7 @@ class Doctor extends User
         $this->setGender($gender);
         $this->setDateOfBirth($dateOfBirth);
         $this->setAddress($address);
+        $this->setSpecialties($specialties);
     }
     #endregion
 
@@ -106,7 +107,8 @@ class Doctor extends User
     /**
      * @return Specialty[]
      */
-    public function getSpecialties(): array{
+    public function getSpecialties(): array
+    {
         return $this->specialties;
     }
     #endregion
@@ -136,9 +138,6 @@ class Doctor extends User
 
     public function setMiddleName(string $value): void
     {
-        if (empty(trim($value))) {
-            throw new InvalidArgumentException('Middle name cannot be empty.');
-        }
         if (mb_strlen($value) > config('data.max_name_length')) {
             throw new InvalidArgumentException('Middle name cannot exceed ' . config('data.max_name_length') . ' characters.');
         }
@@ -158,9 +157,6 @@ class Doctor extends User
 
     public function setSuffixName(string $value): void
     {
-        if (empty(trim($value))) {
-            throw new InvalidArgumentException('Suffix name cannot be empty.');
-        }
         if (mb_strlen($value) > config('data.max_name_length')) {
             throw new InvalidArgumentException('Suffix name cannot exceed ' . config('data.max_name_length') . ' characters.');
         }
@@ -190,13 +186,15 @@ class Doctor extends User
         $this->address = $value;
     }
 
-    public function setSpecialties(array $specialties){
-        foreach($specialties as $specialty){
+    public function setSpecialties(array $specialties)
+    {
+        foreach ($specialties as $specialty) {
             $this->addSpecialty($specialty);
         }
     }
 
-    public function addSpecialty(Specialty $specialty){
+    public function addSpecialty(Specialty $specialty)
+    {
         $this->specialties[] = $specialty;
     }
     #endregion
@@ -214,6 +212,7 @@ class Doctor extends User
             'gender' => $this->getGender()->value,
             'dateOfBirth' => $this->getDateOfBirth()->toDateTimeString(),
             'address' => $this->getAddress()->toArray(),
+            'specialties' => array_map(fn(Specialty $specialty) => $specialty->toArray(), $this->getSpecialties())
         ]);
     }
 
@@ -235,7 +234,7 @@ class Doctor extends User
             $data['middleName'],
             $data['lastName'],
             $data['suffixName'],
-            (float)$data['rating'],
+            (float) $data['rating'],
             Gender::from($data['gender']),
             Carbon::parse($data['dateOfBirth']),
             Address::fromArray($data['address']),
