@@ -13,9 +13,9 @@ class Facility extends Model
         return $this->belongsTo(District::class, 'district_id');
     }
 
-    public function FacilitySchedule()
+    public function facilityHour()
     {
-        return $this->hasMany(FacilitySchedule::class);
+        return $this->hasMany(FacilityHour::class);
     }
 
     public function schedule()
