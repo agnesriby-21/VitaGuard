@@ -14,13 +14,20 @@ use App\Http\Controllers\Api\AuthController;
 |
 */
 
+
+#region API
+Route::prefix('api/')->group(function () {
+    Route::prefix('auth/')->group(function () {
+        Route::post('login', [AuthController::class, 'login']);
+        Route::middleware('auth:sanctum')->group(function () {
+            Route::delete('logout', [AuthController::class, 'logout']);
+        });
+    });
+});
+#endregion
+
+#region PAGE
 Route::get('/', function () {
     return view('welcome');
 });
-
-Route::prefix('api/auth')->group(function () {
-    Route::post('/login', [AuthController::class, 'login']);
-    Route::middleware('auth:sanctum')->group(function () {
-        Route::delete('/logout', [AuthController::class, 'logout']);
-    });
-});
+#endregion
