@@ -100,9 +100,13 @@ Route::middleware(['auth'])->group(function () {
 
     });
 
-    Route::get('/member/consultations', [ConsultationController::class, 'memberPage']);
+    Route::get('/member/consultations', function () {
+        return view('pages.consultations.member');
+    });
 
-    Route::get('/chat/{consultation}', [ChatController::class, 'index']);
+    Route::get('/chat/{consultation}', function ($consultation) {
+        return view('pages.chat.index', ['consultationId' => $consultation]);
+    });
 
     Route::prefix('admin')->middleware('can:' . Role::ADMIN->value)->group(function () {
         Route::get('/home', function () {
@@ -133,7 +137,9 @@ Route::middleware(['auth'])->group(function () {
             return view('pages.doctors.index');
         });
 
-        Route::get('/consultations', [ConsultationController::class, 'doctorPage']);
+        Route::get('/consultations', function () {
+            return view('pages.consultations.doctor');
+        });
     });
 });
 #endregion

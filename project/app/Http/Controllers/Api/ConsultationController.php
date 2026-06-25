@@ -107,13 +107,4 @@ class ConsultationController extends Controller
         ]);
     }
 
-    public function doctorPage()
-    {
-        return view('pages.consultations.doctor');
-    }
-
-    public function memberPage()
-    {
-        return view('pages.consultations.member');
-    }
 }

@@ -15,8 +15,21 @@ class ChatController extends Controller
     public function index($consultation)
     {
         $consultation = Consultation::with('onlineSession')->find($consultation);
-        $layout = auth()->user()->role === 'doctor' ? 'layouts.navbar.admin' : 'layouts.navbar.main';
-        return view('pages.chat.index', compact('consultation', 'layout'));
+
+        return response()->json([
+            'success' => true,
+            'data' => [
+                'id'                => $consultation->id,
+                'online_session_id' => $consultation->online_session_id,
+                'patient'           => $consultation->patient,
+                'doctor'            => $consultation->onlineSession->doctor ?? '-',
+                'start_time'        => $consultation->start_time,
+                'end_time'          => $consultation->end_time,
+                'notes'             => $consultation->notes,
+                'paid_at'           => $consultation->paid_at,
+                'is_active'         => is_null($consultation->end_time),
+            ]
+        ]); 
     }
 
     public function fetchMessages($consultation)
@@ -33,6 +46,9 @@ class ChatController extends Controller
             'data'         => $chats,
             'is_active'    => $isActive,
             'current_user' => auth()->user()->username,
+            'patient'      => $consultationData->patient,
+            'doctor'       => $consultationData->onlineSession->doctor ?? '-',
+            'end_time'     => $consultationData->end_time,
         ]);
     }
 

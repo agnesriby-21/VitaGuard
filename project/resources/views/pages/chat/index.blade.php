@@ -1,7 +1,6 @@
 @php
-    $layout  = auth()->user()->role === 'doctor' ? 'layouts.navbar.admin' : 'layouts.navbar.main';
-    $isDoc   = auth()->user()->role === 'doctor';
-    $isActive = is_null($consultation->end_time);
+    $layout = auth()->user()->role === 'doctor' ? 'layouts.navbar.admin' : 'layouts.navbar.main';
+    $isDoc  = auth()->user()->role === 'doctor';
 @endphp
 
 @extends($layout)
@@ -9,49 +8,29 @@
 @section('content')
 <div class="container mt-4 mb-5">
 
-    {{-- Header --}}
     <div class="d-flex justify-content-between align-items-center mb-3">
         <div>
             <h4 class="mb-1">
                 <i class="bi bi-chat-dots-fill text-primary"></i> Konsultasi Online
             </h4>
-            <p class="text-muted mb-0" style="font-size:0.9rem;">
-                <i class="bi bi-person-fill"></i> <strong>{{ $consultation->patient }}</strong>
-                &nbsp;&mdash;&nbsp;
-                <i class="bi bi-person-badge-fill"></i> <strong>{{ $consultation->onlineSession->doctor ?? '-' }}</strong>
+            <p class="text-muted mb-0" style="font-size:0.9rem;" id="chat-header-info">
+                <span class="spinner-border spinner-border-sm text-secondary"></span> Memuat...
             </p>
         </div>
         <div class="d-flex align-items-center">
-            {{-- Badge status --}}
-            @if($isActive)
-                <span class="badge mr-3 px-3 py-2" id="status-badge"
-                    style="background:#d1fae5; color:#065f46; font-size:0.8rem;">
-                    <i class="bi bi-circle-fill" style="font-size:0.5rem;"></i> Aktif
-                </span>
-            @else
-                <span class="badge mr-3 px-3 py-2" id="status-badge"
-                    style="background:#f3f4f6; color:#6b7280; font-size:0.8rem;">
-                    <i class="bi bi-check-circle-fill"></i>
-                    Selesai &bull; {{ \Carbon\Carbon::parse($consultation->end_time)->format('d M Y H:i') }}
-                </span>
-            @endif
-
+            <span id="status-badge" class="badge mr-3 px-3 py-2" style="display:none;"></span>
             <a href="javascript:history.back()" class="btn btn-outline-secondary btn-sm mr-2">
                 <i class="bi bi-arrow-left"></i> Kembali
             </a>
-
-            @if($isDoc && $isActive)
-                <button class="btn btn-danger btn-sm" id="btn-close-consultation">
+            @if($isDoc)
+                <button class="btn btn-danger btn-sm" id="btn-close-consultation" style="display:none;">
                     <i class="bi bi-x-circle"></i> Tutup Konsultasi
                 </button>
             @endif
         </div>
     </div>
 
-    {{-- Chat Box --}}
     <div class="card border-0 shadow-sm" style="border-radius:16px; overflow:hidden;">
-
-        {{-- Area pesan --}}
         <div id="chat-messages"
             style="height:460px; overflow-y:auto; padding:24px; background:#f8fafc;">
             <div id="chat-loading" class="text-center py-5">
@@ -62,8 +41,7 @@
 
         <div style="border-top:1px solid #e5e7eb;"></div>
 
-        {{-- Input kirim pesan --}}
-        <div id="chat-input-area" class="p-3" @if(!$isActive) style="display:none;" @endif>
+        <div id="chat-input-area" class="p-3" style="display:none;">
             <div class="input-group">
                 <input type="text" id="chat-input" class="form-control"
                     placeholder="Ketik pesan Anda..."
@@ -81,13 +59,10 @@
             </small>
         </div>
 
-        {{-- Notice konsultasi ditutup --}}
         <div id="chat-closed-notice" class="py-3 text-center text-muted"
-            @if($isActive) style="display:none;" @endif
-            style="background:#f9fafb; font-size:0.9rem;">
+            style="display:none; background:#f9fafb; font-size:0.9rem;">
             <i class="bi bi-lock-fill"></i> Konsultasi telah ditutup &mdash; tidak dapat mengirim pesan baru.
         </div>
-
     </div>
 </div>
 @endsection
@@ -115,86 +90,129 @@
 @section('scripts')
 <script>
 $(document).ready(function () {
-    const consultationId = {{ $consultation->id }};
+    const consultationId = {{ $consultationId }};
     const currentUser    = '{{ auth()->user()->username }}';
-    let isActive         = {{ $isActive ? 'true' : 'false' }};
+    const isDoc          = {{ $isDoc ? 'true' : 'false' }};
+    let isActive         = false;
     let lastMessageCount = 0;
     let pollingInterval  = null;
 
-    // ── LOAD PESAN ──────────────────────────────
-    function loadMessages() {
+    function init() {
         $.ajax({
             url: `/api/chat/${consultationId}`,
             method: 'GET',
             success: function (response) {
                 if (!response.success) return;
 
-                const chats = response.data;
-                isActive    = response.is_active;
+                isActive = response.is_active;
 
-                if (chats.length === lastMessageCount) return;
-                lastMessageCount = chats.length;
+                $('#chat-header-info').html(
+                    `<i class="bi bi-person-fill"></i> <strong>${response.patient}</strong>` +
+                    ` &nbsp;&mdash;&nbsp; ` +
+                    `<i class="bi bi-person-badge-fill"></i> <strong>${response.doctor}</strong>`
+                );
 
-                let html = '';
-
-                if (chats.length === 0) {
-                    html = `<div class="text-center text-muted mt-5">
-                                <i class="bi bi-chat-square-dots" style="font-size:2rem;"></i>
-                                <p class="mt-2">Belum ada pesan. Mulai konsultasi Anda.</p>
-                            </div>`;
+                if (isActive) {
+                    $('#status-badge')
+                        .css({ background: '#d1fae5', color: '#065f46' })
+                        .html('<i class="bi bi-circle-fill" style="font-size:0.5rem;"></i> Aktif')
+                        .show();
                 } else {
-                    chats.forEach(function (chat) {
-                        const isSelf = chat.sender === currentUser;
-                        const time   = new Date(chat.created_at).toLocaleTimeString('id-ID', {
-                            hour: '2-digit', minute: '2-digit'
-                        });
-
-                        if (isSelf) {
-                            html += `
-                                <div class="d-flex justify-content-end mb-3">
-                                    <div style="max-width:65%;">
-                                        <div class="text-white p-2 px-3"
-                                            style="background:#3b82f6; border-radius:18px 18px 4px 18px; word-break:break-word;">
-                                            ${escapeHtml(chat.message)}
-                                        </div>
-                                        <div class="text-right mt-1">
-                                            <small class="text-muted">${time}</small>
-                                        </div>
-                                    </div>
-                                </div>`;
-                        } else {
-                            html += `
-                                <div class="d-flex justify-content-start mb-3">
-                                    <div style="max-width:65%;">
-                                        <small class="text-muted d-block mb-1">
-                                            <i class="bi bi-person-circle"></i> ${escapeHtml(chat.sender)}
-                                        </small>
-                                        <div class="p-2 px-3"
-                                            style="background:#ffffff; border:1px solid #e5e7eb; border-radius:18px 18px 18px 4px; word-break:break-word;">
-                                            ${escapeHtml(chat.message)}
-                                        </div>
-                                        <div class="mt-1">
-                                            <small class="text-muted">${time}</small>
-                                        </div>
-                                    </div>
-                                </div>`;
-                        }
-                    });
+                    let endTime = response.end_time ? new Date(response.end_time).toLocaleDateString('id-ID', {
+                        day: '2-digit', month: 'short', year: 'numeric',
+                        hour: '2-digit', minute: '2-digit'
+                    }) : '';
+                    $('#status-badge')
+                        .css({ background: '#f3f4f6', color: '#6b7280' })
+                        .html(`<i class="bi bi-check-circle-fill"></i> Selesai &bull; ${endTime}`)
+                        .show();
                 }
 
-                $('#chat-loading').hide();
-                $('#chat-messages').html(html);
-                scrollToBottom();
+                if (isDoc && isActive) {
+                    $('#btn-close-consultation').show();
+                }
+
+                renderMessages(response.data);
                 updateInputState();
+
+                if (isActive) {
+                    pollingInterval = setInterval(loadMessages, 3000);
+                }
             },
             error: function () {
-                $('#chat-loading').hide();
-                $('#chat-messages').html('<div class="alert alert-danger m-3">Gagal memuat pesan.</div>');
+                $('#chat-header-info').html('<span class="text-danger">Gagal memuat data konsultasi.</span>');
             }
         });
     }
 
-    // ── KIRIM PESAN ─────────────────────────────
+    function loadMessages() {
+        $.ajax({
+            url: `/api/chat/${consultationId}`,
+            method: 'GET',
+            success: function (response) {
+                if (!response.success) return;
+                isActive = response.is_active;
+                if (response.data.length === lastMessageCount) return;
+                renderMessages(response.data);
+                updateInputState();
+            }
+        });
+    }
+
+    function renderMessages(chats) {
+        lastMessageCount = chats.length;
+        let html = '';
+
+        if (chats.length === 0) {
+            html = `<div class="text-center text-muted mt-5">
+                        <i class="bi bi-chat-square-dots" style="font-size:2rem;"></i>
+                        <p class="mt-2">Belum ada pesan. Mulai konsultasi Anda.</p>
+                    </div>`;
+        } else {
+            chats.forEach(function (chat) {
+                const isSelf = chat.sender === currentUser;
+                const time   = new Date(chat.created_at).toLocaleTimeString('id-ID', {
+                    hour: '2-digit', minute: '2-digit'
+                });
+
+                if (isSelf) {
+                    html += `
+                        <div class="d-flex justify-content-end mb-3">
+                            <div style="max-width:65%;">
+                                <div class="text-white p-2 px-3"
+                                    style="background:#3b82f6; border-radius:18px 18px 4px 18px; word-break:break-word;">
+                                    ${escapeHtml(chat.message)}
+                                </div>
+                                <div class="text-right mt-1">
+                                    <small class="text-muted">${time}</small>
+                                </div>
+                            </div>
+                        </div>`;
+                } else {
+                    html += `
+                        <div class="d-flex justify-content-start mb-3">
+                            <div style="max-width:65%;">
+                                <small class="text-muted d-block mb-1">
+                                    <i class="bi bi-person-circle"></i> ${escapeHtml(chat.sender)}
+                                </small>
+                                <div class="p-2 px-3"
+                                    style="background:#ffffff; border:1px solid #e5e7eb; border-radius:18px 18px 18px 4px; word-break:break-word;">
+                                    ${escapeHtml(chat.message)}
+                                </div>
+                                <div class="mt-1">
+                                    <small class="text-muted">${time}</small>
+                                </div>
+                            </div>
+                        </div>`;
+                }
+            });
+        }
+
+        $('#chat-loading').hide();
+        $('#chat-messages').html(html);
+        scrollToBottom();
+    }
+
     function sendMessage() {
         const message = $('#chat-input').val().trim();
         if (!message) return;
@@ -228,7 +246,6 @@ $(document).ready(function () {
         });
     }
 
-    // ── TUTUP KONSULTASI ────────────────────────
     $('#btn-close-consultation').on('click', function () {
         $('#modalCloseConsultation').modal('show');
     });
@@ -249,7 +266,7 @@ $(document).ready(function () {
                     updateInputState();
                     $('#btn-close-consultation').hide();
                     $('#status-badge')
-                        .css({ 'background': '#f3f4f6', 'color': '#6b7280' })
+                        .css({ background: '#f3f4f6', color: '#6b7280' })
                         .html('<i class="bi bi-check-circle-fill"></i> Selesai');
                 } else {
                     alert('Gagal: ' + response.message);
@@ -262,7 +279,6 @@ $(document).ready(function () {
         });
     });
 
-    // ── HELPERS ─────────────────────────────────
     function updateInputState() {
         if (isActive) {
             $('#chat-input-area').show();
@@ -289,11 +305,7 @@ $(document).ready(function () {
 
     $('#btn-send-message').on('click', sendMessage);
 
-    // ── INIT ────────────────────────────────────
-    loadMessages();
-    if (isActive) {
-        pollingInterval = setInterval(loadMessages, 3000);
-    }
+    init();
 });
 </script>
 @endsection
